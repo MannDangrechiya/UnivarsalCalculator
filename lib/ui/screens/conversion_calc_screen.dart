@@ -36,7 +36,8 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
       _volRes = 0,
       _tempRes = 0,
       _speedRes = 0,
-      _currencyRes = 0;
+      _currencyRes = 0,
+      _conversionRate = 0;
   int _ageRes = 0;
 
   // Currency API
@@ -54,7 +55,9 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
   Future<void> _loadCurrencies() async {
     try {
       final symbols = await _currencyService.getAvailableCurrencies();
-      setState(() => _currencies = symbols.keys.toList()..sort());
+      final currencyList = symbols.keys.toList();
+      currencyList.sort();
+      setState(() => _currencies = currencyList);
       if (_currencies.isNotEmpty) {
         _currencyFrom = _currencies.first;
         _currencyTo = _currencies[1];
@@ -82,7 +85,10 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
         _currencyTo,
         amount,
       );
-      setState(() => _currencyRes = res);
+      setState(() {
+        _currencyRes = res['converted'];
+        _conversionRate = res['rate'];
+      });
     } catch (e) {
       _showSnack('Conversion failed: $e');
     } finally {
@@ -251,7 +257,7 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
     );
   }
 
-  // ---------------- Generic Conversion Tab ----------------
+  // Generic conversion tab
   Widget _conversionTab({
     required TextEditingController controller,
     required String from,
@@ -285,7 +291,7 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  initialValue: from,
+                  value: from,
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: isDark ? Colors.grey[850] : Colors.white,
@@ -305,7 +311,7 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
               ),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  initialValue: to,
+                  value: to,
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: isDark ? Colors.grey[850] : Colors.white,
@@ -359,7 +365,6 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
     );
   }
 
-  // ---------------- Speed Tab ----------------
   Widget _speedTab() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
@@ -433,7 +438,6 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
     );
   }
 
-  // ---------------- Age Tab ----------------
   Widget _ageTab() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
@@ -496,12 +500,10 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
     );
   }
 
-  // ---------------- Currency Tab ----------------
   Widget _currencyTab() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (_loadingCurrencyList) {
+    if (_loadingCurrencyList)
       return const Center(child: CircularProgressIndicator());
-    }
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -524,7 +526,7 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  initialValue: _currencyFrom,
+                  value: _currencyFrom,
                   decoration: InputDecoration(
                     labelText: 'From',
                     filled: true,
@@ -545,7 +547,7 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
               ),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  initialValue: _currencyTo,
+                  value: _currencyTo,
                   decoration: InputDecoration(
                     labelText: 'To',
                     filled: true,
@@ -589,7 +591,7 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Converted: ${_currencyRes.toStringAsFixed(2)} $_currencyTo',
+                'Rate: 1 $_currencyFrom = ${_conversionRate.toStringAsFixed(4)} $_currencyTo\nConverted: ${_currencyRes.toStringAsFixed(2)} $_currencyTo',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

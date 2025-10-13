@@ -74,7 +74,7 @@ class _UnitConverterScreenState extends State<UnitConverterScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: selectedConversion,
+                      initialValue: selectedConversion,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: bgColor,

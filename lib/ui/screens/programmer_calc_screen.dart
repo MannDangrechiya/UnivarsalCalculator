@@ -93,10 +93,11 @@ class _ProgrammerCalcScreenState extends State<ProgrammerCalcScreen> {
 
     return ElevatedButton(
       onPressed: () {
-        if (text == 'CA')
+        if (text == 'CA') {
           _clear();
-        else
+        } else {
           _append(text);
+        }
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: color,

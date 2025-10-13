@@ -93,7 +93,7 @@ class _HealthCalcScreenState extends State<HealthCalcScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedGender,
+                    initialValue: _selectedGender,
                     items: const [
                       DropdownMenuItem(value: "Male", child: Text("Male")),
                       DropdownMenuItem(value: "Female", child: Text("Female")),

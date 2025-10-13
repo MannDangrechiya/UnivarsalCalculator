@@ -106,7 +106,7 @@ class _FinancialCalcScreenState extends State<FinancialCalcScreen> {
           children: [
             /// Dropdown for calculator type
             DropdownButtonFormField<String>(
-              value: selectedCalc,
+              initialValue: selectedCalc,
               items: calcOptions
                   .map(
                     (type) => DropdownMenuItem(
