@@ -88,23 +88,15 @@ class _ProgrammerCalcScreenState extends State<ProgrammerCalcScreen> {
 
   Widget calcButton(String text, {Color? color}) {
     final theme = Theme.of(context);
-
-    // If no color provided, use primary color
     color ??= theme.primaryColor;
-
-    // Determine the text color: white if background is dark, black if light
-    final isDarkBg = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDarkBg
-        ? Colors.white
-        : Colors.white; // For dark purple, text is white
+    final textColor = Colors.white;
 
     return ElevatedButton(
       onPressed: () {
-        if (text == 'CA') {
+        if (text == 'CA')
           _clear();
-        } else {
+        else
           _append(text);
-        }
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
@@ -116,7 +108,10 @@ class _ProgrammerCalcScreenState extends State<ProgrammerCalcScreen> {
         fit: BoxFit.scaleDown,
         child: Text(
           text,
-          style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
       ),
     );
@@ -200,13 +195,17 @@ class _ProgrammerCalcScreenState extends State<ProgrammerCalcScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Programmer Calculator")),
+      appBar: AppBar(
+        title: const Text("Programmer Calculator"),
+        backgroundColor: theme.brightness == Brightness.dark
+            ? Colors.deepPurple[900]
+            : Colors.deepPurple,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Column(
             children: [
-              // Input box
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -225,16 +224,13 @@ class _ProgrammerCalcScreenState extends State<ProgrammerCalcScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              // Number system selector
               numberSystemSelector(),
               const SizedBox(height: 8),
-              // Conversion outputs
               outputRow("Decimal", decimal),
               outputRow("Binary", binary),
               outputRow("Octal", octal),
               outputRow("Hex", hex),
               const SizedBox(height: 8),
-              // Buttons grid
               Expanded(
                 flex: 3,
                 child: GridView.builder(

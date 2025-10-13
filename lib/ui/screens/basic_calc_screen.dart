@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:universal_calculator/controllers/calc_controller.dart';
-import 'package:universal_calculator/ui/widgets/history_sheet.dart';
 import '../widgets/calc_display.dart';
+import '../widgets/history_sheet.dart';
 
 class BasicCalcScreen extends StatelessWidget {
   const BasicCalcScreen({super.key});
@@ -12,33 +12,36 @@ class BasicCalcScreen extends StatelessWidget {
     final CalcController calcController = Get.find();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Set operator colors dynamically
-    Color operatorColor = isDark
-        ? Colors.deepPurpleAccent
-        : Colors.deepPurple.shade700;
+    final operatorColor = isDark ? Colors.deepPurpleAccent : Colors.deepPurple;
+    final numberColor = isDark ? Colors.grey : Colors.black87;
+    const textColor = Colors.white;
 
-    // Button text color
-    Color textColor = Colors.white;
-
-    // Use these in your calcButton:
+    // Calculator button
     Widget calcButton(String text, {Color? color, int flex = 1}) {
-      color ??= operatorColor; // background
+      color ??= operatorColor;
       return Expanded(
         flex: flex,
         child: Padding(
           padding: const EdgeInsets.all(4),
           child: ElevatedButton(
             onPressed: () {
-              if (text == 'C') {
-                calcController.clear();
-              } else if (text == '=')
-                calcController.calculate();
-              else
-                calcController.append(text);
+              switch (text) {
+                case 'C':
+                  calcController.clear(type: 'basic');
+                  break;
+                case '⌫':
+                  calcController.backspace(type: 'basic');
+                  break;
+                case '=':
+                  calcController.calculate(type: 'basic');
+                  break;
+                default:
+                  calcController.append(text, type: 'basic');
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: color,
-              foregroundColor: textColor, // text
+              foregroundColor: textColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -46,114 +49,77 @@ class BasicCalcScreen extends StatelessWidget {
             ),
             child: Text(
               text,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ),
         ),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Basic Calculator"),
-        backgroundColor: isDark ? Colors.black : Colors.deepPurple,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) => HistorySheet(),
-              );
-            },
-          ),
-        ],
-      ),
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            const Expanded(flex: 4, child: CalcDisplay()),
-            const SizedBox(height: 12),
+    Widget buildButtonRow(List<String> texts) {
+      return Row(
+        children: texts.map((t) {
+          Color color = numberColor;
+          if (['/', '*', '-', '+', '%'].contains(t)) color = operatorColor;
+          if (t == 'C') color = Colors.red;
+          if (t == '⌫') color = Colors.orange;
+          if (t == '=') color = Colors.green;
+          return calcButton(t, color: color, flex: t == '0' ? 2 : 1);
+        }).toList(),
+      );
+    }
 
-            Expanded(
-              flex: 7,
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(child: calcButton('C', color: Colors.red)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('+/-', color: operatorColor)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('%', color: operatorColor)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('/', color: operatorColor)),
-                    ],
+    return WillPopScope(
+      onWillPop: () async {
+        calcController.clear(type: 'basic');
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Basic Calculator"),
+          backgroundColor: isDark ? Colors.deepPurple[900] : Colors.deepPurple,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Expanded(child: calcButton('7', color: Colors.grey)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('8', color: Colors.grey)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('9', color: Colors.grey)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('*', color: operatorColor)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Expanded(child: calcButton('4', color: Colors.grey)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('5', color: Colors.grey)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('6', color: Colors.grey)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('-', color: operatorColor)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Expanded(child: calcButton('1', color: Colors.grey)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('2', color: Colors.grey)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('3', color: Colors.grey)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('+', color: operatorColor)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: calcButton('0', color: Colors.grey),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('.', color: Colors.grey)),
-                      const SizedBox(width: 8),
-                      Expanded(child: calcButton('=', color: Colors.green)),
-                    ],
-                  ),
-                ],
-              ),
+                  builder: (_) => const HistorySheet(mode: 'basic'),
+                );
+              },
             ),
           ],
+        ),
+        backgroundColor: isDark
+            ? const Color(0xFF121212)
+            : const Color(0xFFF9F9F9),
+        body: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              Expanded(flex: 2, child: CalcDisplay(type: 'basic')),
+              const SizedBox(height: 12),
+              Expanded(
+                flex: 4,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    buildButtonRow(['C', '%', '/', '⌫']),
+                    buildButtonRow(['7', '8', '9', '*']),
+                    buildButtonRow(['4', '5', '6', '-']),
+                    buildButtonRow(['1', '2', '3', '+']),
+                    buildButtonRow(['0', '.', '=']),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

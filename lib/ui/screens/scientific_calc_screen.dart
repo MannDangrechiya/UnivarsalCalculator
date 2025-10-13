@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:universal_calculator/controllers/calc_controller.dart';
-import 'package:universal_calculator/ui/widgets/history_sheet.dart';
 import '../widgets/calc_display.dart';
+import '../widgets/history_sheet.dart';
 
 class ScientificCalcScreen extends StatelessWidget {
   const ScientificCalcScreen({super.key});
@@ -12,17 +12,12 @@ class ScientificCalcScreen extends StatelessWidget {
     final CalcController calcController = Get.find();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Set operator colors dynamically
-    Color operatorColor = isDark
-        ? Colors.deepPurpleAccent
-        : Colors.deepPurple.shade700;
+    final operatorColor = isDark ? Colors.deepPurpleAccent : Colors.deepPurple;
+    final numberColor = isDark ? Colors.grey : Colors.black87;
+    const textColor = Colors.white;
 
-    // Button text color
-    Color textColor = Colors.white;
-
-    // Use these in your calcButton:
     Widget calcButton(String text, {Color? color, int flex = 1}) {
-      color ??= operatorColor; // background
+      color ??= operatorColor;
       return Expanded(
         flex: flex,
         child: Padding(
@@ -30,15 +25,22 @@ class ScientificCalcScreen extends StatelessWidget {
           child: ElevatedButton(
             onPressed: () {
               if (text == 'C') {
-                calcController.clear();
-              } else if (text == '=')
-                calcController.calculate();
-              else
-                calcController.append(text);
+                calcController.clear(type: 'scientific');
+              } else if (text == '⌫') {
+                calcController.backspace(type: 'scientific');
+              } else if (text == '=') {
+                calcController.calculate(type: 'scientific');
+              } else if (['sin', 'cos', 'tan', 'log', '√'].contains(text)) {
+                calcController.append(
+                  text == '√' ? '√(' : '$text(',
+                  type: 'scientific',
+                );
+              } else {
+                calcController.append(text, type: 'scientific');
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: color,
-              foregroundColor: textColor, // text
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -46,7 +48,7 @@ class ScientificCalcScreen extends StatelessWidget {
             ),
             child: Text(
               text,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: textColor,
@@ -57,95 +59,85 @@ class ScientificCalcScreen extends StatelessWidget {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Scientific Calculator"),
-        backgroundColor: isDark ? Colors.black : Colors.deepPurple,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) => HistorySheet(),
-              );
-            },
-          ),
-        ],
-      ),
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          children: [
-            const Expanded(flex: 2, child: CalcDisplay()),
-            const SizedBox(height: 8),
+    final buttonRows = [
+      ['C', '(', ')', '⌫'],
+      ['sin', 'cos', 'tan', '√'],
+      ['7', '8', '9', '÷'],
+      ['4', '5', '6', '×'],
+      ['1', '2', '3', '-'],
+      ['0', '.', 'π', '+'],
+      ['e', '^', 'log', '='],
+    ];
 
-            Expanded(
-              flex: 5,
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      calcButton('C', color: Colors.red),
-                      calcButton('(', color: operatorColor),
-                      calcButton(')', color: operatorColor),
-                      calcButton('=', color: Colors.green),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      calcButton('sin(', color: operatorColor),
-                      calcButton('cos(', color: operatorColor),
-                      calcButton('tan(', color: operatorColor),
-                      calcButton('√(', color: operatorColor),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      calcButton('7', color: Colors.grey),
-                      calcButton('8', color: Colors.grey),
-                      calcButton('9', color: Colors.grey),
-                      calcButton('*', color: operatorColor),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      calcButton('4', color: Colors.grey),
-                      calcButton('5', color: Colors.grey),
-                      calcButton('6', color: Colors.grey),
-                      calcButton('-', color: operatorColor),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      calcButton('1', color: Colors.grey),
-                      calcButton('2', color: Colors.grey),
-                      calcButton('3', color: Colors.grey),
-                      calcButton('+', color: operatorColor),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      calcButton('0', color: Colors.grey),
-                      calcButton('.', color: Colors.grey),
-                      calcButton('^', color: operatorColor),
-                      calcButton('/', color: operatorColor),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      calcButton('log(', color: operatorColor),
-                      calcButton('π', color: operatorColor),
-                      calcButton('e', color: operatorColor),
-                      const Expanded(child: SizedBox()),
-                    ],
-                  ),
-                ],
+    return WillPopScope(
+      onWillPop: () async {
+        calcController.clear(type: 'scientific');
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Scientific Calculator'),
+          backgroundColor: isDark ? Colors.deepPurple[900] : Colors.deepPurple,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () => showModalBottomSheet(
+                context: context,
+                builder: (_) => const HistorySheet(mode: 'scientific'),
               ),
             ),
           ],
+        ),
+        backgroundColor: isDark
+            ? const Color(0xFF121212)
+            : const Color(0xFFF9F9F9),
+        body: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            children: [
+              const Expanded(flex: 2, child: CalcDisplay(type: 'scientific')),
+              const SizedBox(height: 20),
+              Expanded(
+                flex: 5,
+                child: Column(
+                  children: buttonRows.map((row) {
+                    return Row(
+                      children: row.map((text) {
+                        Color color = numberColor;
+                        if ([
+                          '(',
+                          ')',
+                          '+',
+                          '-',
+                          '×',
+                          '÷',
+                          'π',
+                          'e',
+                          '^',
+                          'sin',
+                          'cos',
+                          'tan',
+                          'log',
+                          '√',
+                        ].contains(text)) {
+                          color = operatorColor;
+                        } else if (text == 'C') {
+                          color = Colors.red;
+                        } else if (text == '⌫') {
+                          color = Colors.orange;
+                        } else if (text == '=') {
+                          color = Colors.green;
+                        }
+                        // '0' spans 2 columns
+                        //int flex = text == '0' ? 2 : 1;
+                        return calcButton(text, color: color);
+                      }).toList(),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,46 +1,70 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:math_expressions/math_expressions.dart';
-import 'package:universal_calculator/data/repositories/history_repository.dart';
 import 'dart:math' as math;
+import '../data/repositories/history_repository.dart';
 
 class CalcController extends GetxController {
-  var display = ''.obs;
-  var result = ''.obs;
+  // Basic calculator
+  var basicDisplay = ''.obs;
+  var basicResult = ''.obs;
 
-  final HistoryRepository _historyRepo = HistoryRepository();
+  // Scientific calculator
+  var scientificDisplay = ''.obs;
+  var scientificResult = ''.obs;
 
-  /// Append value to display
-  void append(String value) {
+  // History repositories
+  late final HistoryRepository basicHistoryRepo;
+  late final HistoryRepository scientificHistoryRepo;
+
+  @override
+  void onInit() {
+    super.onInit();
+    basicHistoryRepo = HistoryRepository(mode: 'basic');
+    scientificHistoryRepo = HistoryRepository(mode: 'scientific');
+  }
+
+  void append(String value, {String type = 'basic'}) {
+    final display = type == 'basic' ? basicDisplay : scientificDisplay;
+
     if (display.value == 'Error') display.value = '';
+
+    if (_isOperator(value)) {
+      if (display.value.isEmpty) return;
+      if (_isOperator(display.value.characters.last)) return;
+    }
+
+    if (value == '.' && _isLastNumberHasDecimal(display.value)) return;
+
     display.value += value;
   }
 
-  /// Clear both display and result
-  void clear() {
-    display.value = '';
-    result.value = '';
+  void clear({String type = 'basic'}) {
+    if (type == 'basic') {
+      basicDisplay.value = '';
+      basicResult.value = '';
+    } else {
+      scientificDisplay.value = '';
+      scientificResult.value = '';
+    }
   }
 
-  /// Delete last character
-  void delete() {
+  void backspace({String type = 'basic'}) {
+    final display = type == 'basic' ? basicDisplay : scientificDisplay;
     if (display.value.isNotEmpty) {
       display.value = display.value.substring(0, display.value.length - 1);
     }
   }
 
-  /// Reset everything (call this when switching calculators)
-  void reset() {
-    clear();
-  }
-
-  /// Basic calculation
-  Future<void> calculate() async {
+  Future<void> calculate({String type = 'basic'}) async {
     try {
+      final display = type == 'basic' ? basicDisplay : scientificDisplay;
+      if (display.value.isEmpty) return;
+
       String expString = display.value
           .replaceAll('×', '*')
           .replaceAll('÷', '/')
           .replaceAll('√', 'sqrt')
-          .replaceAll('^', '^')
           .replaceAll('π', math.pi.toString())
           .replaceAll('e', math.e.toString());
 
@@ -49,17 +73,31 @@ class CalcController extends GetxController {
       ContextModel cm = ContextModel();
       double eval = exp.evaluate(EvaluationType.REAL, cm);
 
-      result.value = eval.toString();
-      await _historyRepo.addToHistory(display.value, result.value);
+      final resultStr = _formatResult(eval);
+
+      if (type == 'basic') {
+        basicResult.value = resultStr;
+        await basicHistoryRepo.addToHistory(display.value, resultStr);
+      } else {
+        scientificResult.value = resultStr;
+        await scientificHistoryRepo.addToHistory(display.value, resultStr);
+      }
     } catch (e) {
-      result.value = 'Error';
+      if (type == 'basic') {
+        basicResult.value = 'Error';
+      } else {
+        scientificResult.value = 'Error';
+      }
     }
   }
 
-  /// Scientific calculation
   Future<void> scientificCalc(String func) async {
+    final display = scientificDisplay;
+    display.value += '$func(';
+
     try {
-      double value = double.tryParse(display.value) ?? 0.0;
+      double value =
+          double.tryParse(display.value.replaceAll('$func(', '')) ?? 0.0;
       double res = 0.0;
 
       switch (func) {
@@ -82,10 +120,31 @@ class CalcController extends GetxController {
           res = value;
       }
 
-      result.value = res.toString();
-      await _historyRepo.addToHistory('$func($value)', result.value);
-    } catch (e) {
-      result.value = 'Error';
+      scientificResult.value = _formatResult(res);
+      await scientificHistoryRepo.addToHistory(
+        '$func($value)',
+        scientificResult.value,
+      );
+      scientificDisplay.value = scientificResult.value;
+    } catch (_) {
+      scientificResult.value = 'Error';
     }
+  }
+
+  bool _isOperator(String value) =>
+      ['+', '-', '*', '/', '×', '÷', '%', '^'].contains(value);
+
+  bool _isLastNumberHasDecimal(String display) {
+    final parts = display.split(RegExp(r'[\+\-\*/×÷%]'));
+    final last = parts.isNotEmpty ? parts.last : '';
+    return last.contains('.');
+  }
+
+  String _formatResult(double value) {
+    if (value % 1 == 0) return value.toInt().toString();
+    return value
+        .toStringAsFixed(6)
+        .replaceAll(RegExp(r'0+$'), '')
+        .replaceAll(RegExp(r'\.$'), '');
   }
 }

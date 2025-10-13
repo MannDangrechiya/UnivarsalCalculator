@@ -10,112 +10,166 @@ class GraphingCalcScreen extends StatefulWidget {
 }
 
 class _GraphingCalcScreenState extends State<GraphingCalcScreen> {
-  final TextEditingController controller = TextEditingController(
-    text: "sin(x)",
-  );
-  List<FlSpot> points = [];
+  final List<TextEditingController> functionControllers = [
+    TextEditingController(text: "sin(x)"),
+  ];
 
-  void plotFunction() {
-    final text = controller.text.trim().toLowerCase();
-    if (text.isEmpty) return;
+  List<List<FlSpot>> allPoints = [];
+  double minX = -10, maxX = 10;
+  double minY = -10, maxY = 10;
 
-    try {
-      // Prepare parser
-      Parser parser = Parser();
-      String exprStr = text.replaceAll('y=', '').replaceAll('^', '^');
-      Expression exp = parser.parse(exprStr);
-      ContextModel cm = ContextModel();
+  void plotFunctions() {
+    List<List<FlSpot>> tempAllPoints = [];
+    double tempMinY = double.infinity;
+    double tempMaxY = double.negativeInfinity;
 
-      // Generate points from -10 to +10
-      List<FlSpot> tempPoints = [];
-      for (double x = -10; x <= 10; x += 0.1) {
-        cm.bindVariableName('x', Number(x));
-        double y = exp.evaluate(EvaluationType.REAL, cm);
-        if (y.isFinite) tempPoints.add(FlSpot(x, y));
+    for (var controller in functionControllers) {
+      final text = controller.text.trim();
+      if (text.isEmpty) continue;
+
+      try {
+        Parser parser = Parser();
+        Expression exp = parser.parse(text.replaceAll('y=', ''));
+        ContextModel cm = ContextModel();
+
+        List<FlSpot> points = [];
+        for (double x = minX; x <= maxX; x += 0.05) {
+          cm.bindVariableName('x', Number(x));
+          double y = exp.evaluate(EvaluationType.REAL, cm);
+          if (y.isFinite) {
+            points.add(FlSpot(x, y));
+            tempMinY = y < tempMinY ? y : tempMinY;
+            tempMaxY = y > tempMaxY ? y : tempMaxY;
+          }
+        }
+
+        if (points.isNotEmpty) tempAllPoints.add(points);
+      } catch (_) {
+        _showError("Invalid function: $text");
       }
-
-      setState(() => points = tempPoints);
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Invalid function!")));
     }
+
+    if (tempAllPoints.isNotEmpty) {
+      setState(() {
+        allPoints = tempAllPoints;
+        minY = tempMinY - 1;
+        maxY = tempMaxY + 1;
+      });
+    }
+  }
+
+  void addFunctionField() {
+    setState(() {
+      functionControllers.add(TextEditingController());
+    });
+  }
+
+  void removeFunctionField(int index) {
+    if (functionControllers.length > 1) {
+      setState(() {
+        functionControllers.removeAt(index);
+      });
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  void dispose() {
+    for (var c in functionControllers) {
+      c.dispose();
+    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Graphing Calculator")),
+      appBar: AppBar(
+        title: const Text("Graphing Calculator"),
+        backgroundColor: isDark ? Colors.deepPurple[900] : Colors.deepPurple,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                labelText: "Enter function (e.g. y=sin(x), x^2, e^x)",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: functionControllers.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: functionControllers[index],
+                            decoration: InputDecoration(
+                              labelText: "y = f(x) #${index + 1}",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            keyboardType: TextInputType.multiline,
+                            onSubmitted: (_) => plotFunctions(),
+                          ),
+                        ),
+                        if (functionControllers.length > 1)
+                          IconButton(
+                            icon: const Icon(
+                              Icons.remove_circle,
+                              color: Colors.red,
+                            ),
+                            onPressed: () => removeFunctionField(index),
+                          ),
+                      ],
+                    ),
+                  );
+                },
               ),
-              onSubmitted: (_) => plotFunction(),
             ),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: plotFunction,
-              icon: const Icon(Icons.show_chart),
-              label: const Text("Plot Graph"),
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: addFunctionField,
+                  icon: const Icon(Icons.add),
+                  label: const Text("Add Function"),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton.icon(
+                  onPressed: plotFunctions,
+                  icon: const Icon(Icons.show_chart),
+                  label: const Text("Plot Graph"),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Expanded(
+              flex: 2,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.shade300),
+                  color: isDark ? Colors.black : Colors.white,
+                  border: Border.all(color: Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: points.isEmpty
-                    ? const Center(child: Text("Enter a function to plot"))
+                child: allPoints.isEmpty
+                    ? const Center(child: Text("Enter functions to plot"))
                     : Padding(
                         padding: const EdgeInsets.all(12),
                         child: LineChart(
                           LineChartData(
-                            minX: -10,
-                            maxX: 10,
-                            minY: -10,
-                            maxY: 10,
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: points,
-                                isCurved: true,
-                                color: Colors.blue,
-                                barWidth: 2,
-                                dotData: FlDotData(show: false),
-                              ),
-                              // X-axis (y = 0)
-                              LineChartBarData(
-                                spots: List.generate(201, (i) {
-                                  double x = -10 + i * 0.1;
-                                  return FlSpot(x, 0);
-                                }),
-                                color: Colors.black,
-                                barWidth: 1.2,
-                              ),
-                              // Y-axis (x = 0)
-                              LineChartBarData(
-                                spots: List.generate(201, (i) {
-                                  double y = -10 + i * 0.1;
-                                  return FlSpot(0, y);
-                                }),
-                                color: Colors.black,
-                                barWidth: 1.2,
-                              ),
-                            ],
+                            minX: minX,
+                            maxX: maxX,
+                            minY: minY,
+                            maxY: maxY,
                             gridData: FlGridData(
                               show: true,
-                              drawVerticalLine: true,
-                              verticalInterval: 1,
-                              horizontalInterval: 1,
                               getDrawingHorizontalLine: (_) => FlLine(
                                 color: Colors.grey.withOpacity(0.3),
                                 strokeWidth: 1,
@@ -126,32 +180,68 @@ class _GraphingCalcScreenState extends State<GraphingCalcScreen> {
                               ),
                             ),
                             titlesData: FlTitlesData(
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: 2,
-                                  reservedSize: 30,
-                                  getTitlesWidget: (val, _) =>
-                                      Text(val.toInt().toString()),
-                                ),
-                              ),
                               leftTitles: AxisTitles(
                                 sideTitles: SideTitles(
                                   showTitles: true,
-                                  interval: 2,
+                                  interval: (maxY - minY) / 10,
                                   reservedSize: 35,
-                                  getTitlesWidget: (val, _) =>
-                                      Text(val.toInt().toString()),
                                 ),
                               ),
-                              rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval: (maxX - minX) / 10,
+                                  reservedSize: 30,
+                                ),
                               ),
                               topTitles: const AxisTitles(
                                 sideTitles: SideTitles(showTitles: false),
                               ),
+                              rightTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
                             ),
                             borderData: FlBorderData(show: false),
+                            lineBarsData: [
+                              ...allPoints.asMap().entries.map((entry) {
+                                int idx = entry.key;
+                                List<FlSpot> points = entry.value;
+                                return LineChartBarData(
+                                  spots: points,
+                                  isCurved: true,
+                                  barWidth: 2,
+                                  dotData: FlDotData(show: false),
+                                  color: Colors
+                                      .primaries[idx % Colors.primaries.length],
+                                );
+                              }),
+                              // X-axis
+                              LineChartBarData(
+                                spots: List.generate(
+                                  201,
+                                  (i) =>
+                                      FlSpot(minX + i * (maxX - minX) / 200, 0),
+                                ),
+                                color: isDark ? Colors.white : Colors.black,
+                                barWidth: 1,
+                              ),
+                              // Y-axis
+                              LineChartBarData(
+                                spots: List.generate(
+                                  201,
+                                  (i) =>
+                                      FlSpot(0, minY + i * (maxY - minY) / 200),
+                                ),
+                                color: isDark ? Colors.white : Colors.black,
+                                barWidth: 1,
+                              ),
+                            ],
+                            lineTouchData: LineTouchData(
+                              enabled: true,
+                              touchTooltipData: LineTouchTooltipData(
+                                tooltipBgColor: Colors.grey.withOpacity(0.7),
+                              ),
+                            ),
                           ),
                         ),
                       ),

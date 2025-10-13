@@ -10,32 +10,29 @@ class EngineeringCalcScreen extends StatefulWidget {
 
 class _EngineeringCalcScreenState extends State<EngineeringCalcScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  late final TabController _tabController;
 
-  // Trigonometry
+  // -------------------- Controllers --------------------
   final TextEditingController _angleController = TextEditingController();
-  double _sin = 0, _cos = 0, _tan = 0;
 
-  // Physics
   final TextEditingController _massController = TextEditingController();
   final TextEditingController _accController = TextEditingController();
   final TextEditingController _energyMassController = TextEditingController();
   final TextEditingController _velocityController = TextEditingController();
   final TextEditingController _powerWorkController = TextEditingController();
   final TextEditingController _powerTimeController = TextEditingController();
-  double _force = 0, _energy = 0, _power = 0;
 
-  // Electrical
   final TextEditingController _voltageController = TextEditingController();
   final TextEditingController _currentController = TextEditingController();
-  final TextEditingController _resistanceController = TextEditingController();
-  double _resistance = 0;
 
-  // Chemistry
   final TextEditingController _molesController = TextEditingController();
   final TextEditingController _volumeChemController = TextEditingController();
   final TextEditingController _hPlusController = TextEditingController();
-  double _molarity = 0, _pH = 0;
+
+  // -------------------- Values --------------------
+  double _sin = 0, _cos = 0, _tan = 0;
+  double _force = 0, _energy = 0, _power = 0;
+  double _resistance = 0, _molarity = 0, _pH = 0;
 
   @override
   void initState() {
@@ -55,7 +52,6 @@ class _EngineeringCalcScreenState extends State<EngineeringCalcScreen>
     _powerTimeController.dispose();
     _voltageController.dispose();
     _currentController.dispose();
-    _resistanceController.dispose();
     _molesController.dispose();
     _volumeChemController.dispose();
     _hPlusController.dispose();
@@ -64,12 +60,16 @@ class _EngineeringCalcScreenState extends State<EngineeringCalcScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Engineering Calculator'),
+        backgroundColor: isDark ? Colors.deepPurple[900] : Colors.deepPurple,
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: Colors.yellow,
           isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: const [
             Tab(
               child: Text(
@@ -101,235 +101,158 @@ class _EngineeringCalcScreenState extends State<EngineeringCalcScreen>
     );
   }
 
-  /// ----------------- TRIGONOMETRY -----------------
+  // ---------------- TRIGONOMETRY TAB ----------------
   Widget _trigonometryTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          TextField(
-            controller: _angleController,
-            decoration: const InputDecoration(
-              labelText: 'Angle (degrees)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: () {
-              double angle = double.tryParse(_angleController.text) ?? 0;
-              setState(() {
-                _sin = MathUtils.sinDeg(angle);
-                _cos = MathUtils.cosDeg(angle);
-                _tan = MathUtils.tanDeg(angle);
-              });
-            },
-            child: const Text('Calculate'),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Sin: $_sin, Cos: $_cos, Tan: $_tan',
-            style: const TextStyle(fontSize: 16),
-          ),
-        ],
-      ),
+    return _buildScrollableContainer(
+      children: [
+        _inputField(_angleController, 'Angle (degrees)'),
+        _calcButton('Calculate', () {
+          final angle = double.tryParse(_angleController.text) ?? 0;
+          setState(() {
+            _sin = MathUtils.sinDeg(angle);
+            _cos = MathUtils.cosDeg(angle);
+            _tan = MathUtils.tanDeg(angle);
+          });
+        }),
+        _resultText(
+          'Sin: ${_sin.toStringAsFixed(4)}\n'
+          'Cos: ${_cos.toStringAsFixed(4)}\n'
+          'Tan: ${_tan.toStringAsFixed(4)}',
+        ),
+      ],
     );
   }
 
-  /// ----------------- PHYSICS -----------------
+  // ---------------- PHYSICS TAB ----------------
   Widget _physicsTab() {
+    return _buildScrollableContainer(
+      children: [
+        _sectionTitle('Force = m × a'),
+        _inputField(_massController, 'Mass (kg)'),
+        _inputField(_accController, 'Acceleration (m/s²)'),
+        _calcButton('Calculate Force', () {
+          final m = double.tryParse(_massController.text) ?? 0;
+          final a = double.tryParse(_accController.text) ?? 0;
+          setState(() => _force = MathUtils.calculateForce(m, a));
+        }),
+        _resultText('Force: ${_force.toStringAsFixed(3)} N'),
+        const Divider(),
+
+        _sectionTitle('Kinetic Energy = ½ m v²'),
+        _inputField(_energyMassController, 'Mass (kg)'),
+        _inputField(_velocityController, 'Velocity (m/s)'),
+        _calcButton('Calculate Energy', () {
+          final m = double.tryParse(_energyMassController.text) ?? 0;
+          final v = double.tryParse(_velocityController.text) ?? 0;
+          setState(() => _energy = MathUtils.calculateKineticEnergy(m, v));
+        }),
+        _resultText('Energy: ${_energy.toStringAsFixed(3)} J'),
+        const Divider(),
+
+        _sectionTitle('Power = Work ÷ Time'),
+        _inputField(_powerWorkController, 'Work (J)'),
+        _inputField(_powerTimeController, 'Time (s)'),
+        _calcButton('Calculate Power', () {
+          final w = double.tryParse(_powerWorkController.text) ?? 0;
+          final t = double.tryParse(_powerTimeController.text) ?? 1;
+          setState(() => _power = MathUtils.calculatePower(w, t));
+        }),
+        _resultText('Power: ${_power.toStringAsFixed(3)} W'),
+      ],
+    );
+  }
+
+  // ---------------- ELECTRICAL TAB ----------------
+  Widget _electricalTab() {
+    return _buildScrollableContainer(
+      children: [
+        _sectionTitle('Ohm’s Law: R = V ÷ I'),
+        _inputField(_voltageController, 'Voltage (V)'),
+        _inputField(_currentController, 'Current (A)'),
+        _calcButton('Calculate Resistance', () {
+          final v = double.tryParse(_voltageController.text) ?? 0;
+          final i = double.tryParse(_currentController.text) ?? 1;
+          setState(() => _resistance = MathUtils.calculateResistance(v, i));
+        }),
+        _resultText('Resistance: ${_resistance.toStringAsFixed(3)} Ω'),
+      ],
+    );
+  }
+
+  // ---------------- CHEMISTRY TAB ----------------
+  Widget _chemistryTab() {
+    return _buildScrollableContainer(
+      children: [
+        _sectionTitle('Molarity = moles ÷ volume'),
+        _inputField(_molesController, 'Moles'),
+        _inputField(_volumeChemController, 'Volume (L)'),
+        _calcButton('Calculate Molarity', () {
+          final moles = double.tryParse(_molesController.text) ?? 0;
+          final vol = double.tryParse(_volumeChemController.text) ?? 1;
+          setState(() => _molarity = MathUtils.calculateMolarity(moles, vol));
+        }),
+        _resultText('Molarity: ${_molarity.toStringAsFixed(4)} M'),
+        const Divider(),
+
+        _sectionTitle('pH = -log [H⁺]'),
+        _inputField(_hPlusController, 'H⁺ Concentration (mol/L)'),
+        _calcButton('Calculate pH', () {
+          final h = double.tryParse(_hPlusController.text) ?? 0;
+          setState(() => _pH = MathUtils.calculatePH(h));
+        }),
+        _resultText('pH: ${_pH.toStringAsFixed(3)}'),
+      ],
+    );
+  }
+
+  // ------------------- REUSABLE WIDGETS -------------------
+  Widget _buildScrollableContainer({required List<Widget> children}) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
-        children: [
-          // Force = m * a
-          TextField(
-            controller: _massController,
-            decoration: const InputDecoration(
-              labelText: 'Mass (kg)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _accController,
-            decoration: const InputDecoration(
-              labelText: 'Acceleration (m/s²)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          ElevatedButton(
-            onPressed: () {
-              double mass = double.tryParse(_massController.text) ?? 0;
-              double acc = double.tryParse(_accController.text) ?? 0;
-              setState(() => _force = MathUtils.calculateForce(mass, acc));
-            },
-            child: const Text('Calculate Force'),
-          ),
-          Text('Force: $_force N', style: const TextStyle(fontSize: 16)),
-          const Divider(),
-
-          // Energy = 0.5 * m * v²
-          TextField(
-            controller: _energyMassController,
-            decoration: const InputDecoration(
-              labelText: 'Mass (kg)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _velocityController,
-            decoration: const InputDecoration(
-              labelText: 'Velocity (m/s)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          ElevatedButton(
-            onPressed: () {
-              double m = double.tryParse(_energyMassController.text) ?? 0;
-              double v = double.tryParse(_velocityController.text) ?? 0;
-              setState(() => _energy = MathUtils.calculateKineticEnergy(m, v));
-            },
-            child: const Text('Calculate Energy'),
-          ),
-          Text('Energy: $_energy J', style: const TextStyle(fontSize: 16)),
-          const Divider(),
-
-          // Power = Work / Time
-          TextField(
-            controller: _powerWorkController,
-            decoration: const InputDecoration(
-              labelText: 'Work (J)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _powerTimeController,
-            decoration: const InputDecoration(
-              labelText: 'Time (s)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          ElevatedButton(
-            onPressed: () {
-              double work = double.tryParse(_powerWorkController.text) ?? 0;
-              double time = double.tryParse(_powerTimeController.text) ?? 1;
-              setState(() => _power = MathUtils.calculatePower(work, time));
-            },
-            child: const Text('Calculate Power'),
-          ),
-          Text('Power: $_power W', style: const TextStyle(fontSize: 16)),
-        ],
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [...children, const SizedBox(height: 30)],
       ),
     );
   }
 
-  /// ----------------- ELECTRICAL -----------------
-  Widget _electricalTab() {
+  Widget _inputField(TextEditingController controller, String label) {
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          TextField(
-            controller: _voltageController,
-            decoration: const InputDecoration(
-              labelText: 'Voltage (V)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _currentController,
-            decoration: const InputDecoration(
-              labelText: 'Current (A)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          ElevatedButton(
-            onPressed: () {
-              double voltage = double.tryParse(_voltageController.text) ?? 0;
-              double current = double.tryParse(_currentController.text) ?? 1;
-              setState(
-                () => _resistance = MathUtils.calculateResistance(
-                  voltage,
-                  current,
-                ),
-              );
-            },
-            child: const Text('Calculate Resistance'),
-          ),
-          Text(
-            'Resistance: $_resistance Ω',
-            style: const TextStyle(fontSize: 16),
-          ),
-        ],
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
       ),
     );
   }
 
-  /// ----------------- CHEMISTRY -----------------
-  Widget _chemistryTab() {
+  Widget _calcButton(String text, VoidCallback onPressed) {
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          TextField(
-            controller: _molesController,
-            decoration: const InputDecoration(
-              labelText: 'Moles',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _volumeChemController,
-            decoration: const InputDecoration(
-              labelText: 'Volume (L)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          ElevatedButton(
-            onPressed: () {
-              double moles = double.tryParse(_molesController.text) ?? 0;
-              double vol = double.tryParse(_volumeChemController.text) ?? 1;
-              setState(
-                () => _molarity = MathUtils.calculateMolarity(moles, vol),
-              );
-            },
-            child: const Text('Calculate Molarity'),
-          ),
-          Text('Molarity: $_molarity M', style: const TextStyle(fontSize: 16)),
-          const Divider(),
-          TextField(
-            controller: _hPlusController,
-            decoration: const InputDecoration(
-              labelText: 'H⁺ Concentration (mol/L)',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          ElevatedButton(
-            onPressed: () {
-              double h = double.tryParse(_hPlusController.text) ?? 0;
-              setState(() => _pH = MathUtils.calculatePH(h));
-            },
-            child: const Text('Calculate pH'),
-          ),
-          Text('pH: $_pH', style: const TextStyle(fontSize: 16)),
-        ],
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: ElevatedButton(onPressed: onPressed, child: Text(text)),
+    );
+  }
+
+  Widget _resultText(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Text(
+        text,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
       ),
     );
   }

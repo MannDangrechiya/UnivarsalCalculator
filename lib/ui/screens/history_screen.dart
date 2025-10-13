@@ -4,22 +4,25 @@ import '../../data/models/history_item.dart';
 import '../../data/repositories/history_repository.dart';
 
 class HistoryScreen extends StatelessWidget {
-  HistoryScreen({super.key});
-  final HistoryRepository _repo = HistoryRepository();
+  final String mode; // 'basic' or 'scientific'
+
+  const HistoryScreen({super.key, required this.mode});
 
   @override
   Widget build(BuildContext context) {
+    final HistoryRepository repo = HistoryRepository(mode: mode);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("History"),
+        title: Text("${mode.capitalizeFirst} History"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
+            icon: const Icon(Icons.delete_forever, color: Colors.red),
             onPressed: () async {
-              await _repo.clearAllHistory();
+              await repo.clearAllHistory();
               Get.snackbar(
                 'History',
-                'All history cleared',
+                '${mode.capitalizeFirst} history cleared',
                 snackPosition: SnackPosition.BOTTOM,
               );
             },
@@ -27,7 +30,7 @@ class HistoryScreen extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<List<HistoryItem>>(
-        stream: _repo.fetchHistoryStream(),
+        stream: repo.fetchHistoryStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -42,11 +45,30 @@ class HistoryScreen extends StatelessWidget {
             itemCount: history.length,
             itemBuilder: (context, index) {
               final item = history[index];
-              return ListTile(
-                title: Text(item.expression),
-                subtitle: Text(item.result),
-                trailing: Text(
-                  "${item.timestamp.hour.toString().padLeft(2, '0')}:${item.timestamp.minute.toString().padLeft(2, '0')}",
+              return Dismissible(
+                key: Key(item.id),
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                direction: DismissDirection.endToStart,
+                onDismissed: (_) async {
+                  await repo.deleteHistoryItem(item.id);
+                  Get.snackbar(
+                    "Deleted",
+                    "History item removed",
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                },
+                child: ListTile(
+                  title: Text(item.expression),
+                  subtitle: Text(item.result),
+                  trailing: Text(
+                    "${item.timestamp.hour.toString().padLeft(2, '0')}:${item.timestamp.minute.toString().padLeft(2, '0')}",
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                 ),
               );
             },

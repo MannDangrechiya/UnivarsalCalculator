@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:universal_calculator/controllers/calc_controller.dart';
+import '../../controllers/calc_controller.dart';
 
 class CalcDisplay extends StatelessWidget {
-  const CalcDisplay({super.key});
+  final String type;
+  const CalcDisplay({super.key, this.type = 'basic'});
 
   @override
   Widget build(BuildContext context) {
-    final CalcController calcController = Get.find();
+    final CalcController controller = Get.find();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final display = type == 'basic'
+        ? controller.basicDisplay
+        : controller.scientificDisplay;
+    final result = type == 'basic'
+        ? controller.basicResult
+        : controller.scientificResult;
 
     return Container(
       width: double.infinity,
@@ -18,38 +26,32 @@ class CalcDisplay extends StatelessWidget {
         color: isDark ? const Color(0xFF1E1E1E) : Colors.grey[200],
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Expression Text
-          Obx(
-            () => Text(
-              calcController.display.value,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w400,
-                color: isDark ? Colors.white70 : Colors.black87,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Obx(
+              () => Text(
+                display.value,
+                style: TextStyle(
+                  fontSize: 28,
+                  color: isDark ? Colors.white70 : Colors.black87,
+                ),
               ),
-              textAlign: TextAlign.right,
             ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Result Text
-          Obx(
-            () => Text(
-              calcController.result.value,
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black,
+            const SizedBox(height: 8),
+            Obx(
+              () => Text(
+                result.value,
+                style: TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
               ),
-              textAlign: TextAlign.right,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
