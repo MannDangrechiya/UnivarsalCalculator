@@ -12,10 +12,17 @@ class F1Chart extends StatelessWidget {
       return const Center(child: Text("No data"));
     }
 
-    double minX = points.first.x;
-    double maxX = points.last.x;
-    double minY = points.map((p) => p.y).reduce((a, b) => a < b ? a : b);
-    double maxY = points.map((p) => p.y).reduce((a, b) => a > b ? a : b);
+    // Safe min/max calculation
+    final minX = points.first.x;
+    final maxX = points.last.x;
+
+    final minY = points
+        .map((p) => p.y)
+        .reduce((a, b) => a < b ? a : b);
+
+    final maxY = points
+        .map((p) => p.y)
+        .reduce((a, b) => a > b ? a : b);
 
     return LineChart(
       LineChartData(
@@ -23,19 +30,27 @@ class F1Chart extends StatelessWidget {
         maxX: maxX,
         minY: minY,
         maxY: maxY,
-        gridData: FlGridData(show: true),
-        titlesData: FlTitlesData(
-          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
-          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
+
+        gridData: const FlGridData(show: true),
+
+        titlesData: const FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(showTitles: true),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(showTitles: true),
+          ),
         ),
+
         borderData: FlBorderData(show: true),
+
         lineBarsData: [
           LineChartBarData(
             spots: points,
             isCurved: true,
+            barWidth: 3,
             color: Colors.blue,
-            barWidth: 2,
-            dotData: FlDotData(show: false),
+            dotData: const FlDotData(show: false),
           ),
         ],
       ),

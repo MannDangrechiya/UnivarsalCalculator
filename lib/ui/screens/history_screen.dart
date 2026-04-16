@@ -20,11 +20,6 @@ class HistoryScreen extends StatelessWidget {
             icon: const Icon(Icons.delete_forever, color: Colors.red),
             onPressed: () async {
               await repo.clearAllHistory();
-              Get.snackbar(
-                'History',
-                '${mode.capitalizeFirst} history cleared',
-                snackPosition: SnackPosition.BOTTOM,
-              );
             },
           ),
         ],
@@ -56,11 +51,6 @@ class HistoryScreen extends StatelessWidget {
                 direction: DismissDirection.endToStart,
                 onDismissed: (_) async {
                   await repo.deleteHistoryItem(item.id);
-                  Get.snackbar(
-                    "Deleted",
-                    "History item removed",
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
                 },
                 child: ListTile(
                   title: Text(item.expression),

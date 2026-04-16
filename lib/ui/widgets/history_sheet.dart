@@ -56,13 +56,6 @@ class HistorySheet extends StatelessWidget {
                     onPressed: () async {
                       await repo.clearAllHistory();
                       Get.back();
-                      Get.snackbar(
-                        "History Cleared",
-                        mode == 'scientific'
-                            ? "Scientific history cleared"
-                            : "Basic history cleared",
-                        snackPosition: SnackPosition.BOTTOM,
-                      );
                     },
                     icon: const Icon(Icons.delete_forever, color: Colors.red),
                   ),
@@ -86,11 +79,6 @@ class HistorySheet extends StatelessWidget {
                       direction: DismissDirection.endToStart,
                       onDismissed: (_) async {
                         await repo.deleteHistoryItem(item.id);
-                        Get.snackbar(
-                          "Deleted",
-                          "History item removed",
-                          snackPosition: SnackPosition.BOTTOM,
-                        );
                       },
                       child: ListTile(
                         title: Text(item.expression),

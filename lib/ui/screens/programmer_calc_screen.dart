@@ -151,7 +151,7 @@ class _ProgrammerCalcScreenState extends State<ProgrammerCalcScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       margin: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
-        color: theme.dividerColor.withOpacity(0.05),
+        color: theme.dividerColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

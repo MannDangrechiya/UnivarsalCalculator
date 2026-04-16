@@ -34,6 +34,20 @@ class SettingsScreen extends StatelessWidget {
               title: Text("App Version"),
               subtitle: Text("1.0.0"),
             ),
+
+            const Spacer(), // pushes the name to the bottom
+            // Your name section
+            Column(
+              children: const [
+                Divider(),
+                SizedBox(height: 8),
+                Text(
+                  "Developed by Mann Dangrechiya",
+                  style: TextStyle(fontSize: 14),
+                ),
+                SizedBox(height: 8),
+              ],
+            ),
           ],
         ),
       ),
