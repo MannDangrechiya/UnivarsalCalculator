@@ -291,7 +291,7 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: from,
+                  initialValue: from,
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: isDark ? Colors.grey[850] : Colors.white,
@@ -311,7 +311,7 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
               ),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: to,
+                  initialValue: to,
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: isDark ? Colors.grey[850] : Colors.white,
@@ -502,8 +502,9 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
 
   Widget _currencyTab() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (_loadingCurrencyList)
+    if (_loadingCurrencyList) {
       return const Center(child: CircularProgressIndicator());
+    }
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -526,7 +527,7 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _currencyFrom,
+                  initialValue: _currencyFrom,
                   decoration: InputDecoration(
                     labelText: 'From',
                     filled: true,
@@ -547,7 +548,7 @@ class _ConversionCalcScreenState extends State<ConversionCalcScreen>
               ),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _currencyTo,
+                  initialValue: _currencyTo,
                   decoration: InputDecoration(
                     labelText: 'To',
                     filled: true,
